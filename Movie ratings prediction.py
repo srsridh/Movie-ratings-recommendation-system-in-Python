@@ -4,7 +4,7 @@ import numpy as np
 import time
 
 
-#Function bloc to read data file into pandas and include column names
+#Function block to read data file into pandas and include column names
 def reading_csv(train_file,test_file):
     colnames = ['user', 'movie', 'rating', 'time']
     train = pd.read_csv('train1.csv', names=colnames, header=None)
@@ -12,10 +12,9 @@ def reading_csv(train_file,test_file):
     return train,test
 
 #Function block to calculate Euclidean, cityblock and cosine distances
-def distance(train_pivot,distancefunc):
-    distance = scipy.spatial.distance.cdist(train_pivot.iloc[:, 1:], train_pivot.iloc[:, 1:], metric = distancefunc)
+def distance(train_pivot,distance_type):
+    distance = scipy.spatial.distance.cdist(train_pivot.iloc[:, 1:], train_pivot.iloc[:, 1:], metric = distance_type)
     distance_df = pd.DataFrame(distance)
-    #print("euclis :", euclidean_df)
     return distance_df
 
 #Function block to calculate users_similar is a dictionary of each movie id and all users who have watched that movie
@@ -49,21 +48,16 @@ def madlist1(test,train_pivot,k):
     for index, row in test.iterrows():
         user = row['user']
         movie = row['movie']
-        #neighborList = movieDict[usr]
         list_neighbor = users_neighbor[user]
         if movie not in users_similar:
             mean = 0
             mean_list.append(mean)
             continue
         list_movie = users_similar[movie]
-        #print("movieList :: ", list_movie )
         s =set(list_movie)
-        #list_common = set(list_neighbor).intersection(set(list_movie))
         list_common = [x for x in list_neighbor if x in s]
-        #print("commonusers:: ", list_common)
         list_rating = [train_pivot.ix[i, movie] for i in list_common]
         list_rating = np.array(list_rating)
-        #print("ratingList :: ", list_rating)
         mean = 0
         if len(list_rating) >= k:
             mean = np.mean(list_rating[:k])
@@ -76,7 +70,6 @@ def madlist1(test,train_pivot,k):
             else:
                 mean = 0
         mean_list.append(mean)
-        #test['predicted rating'] = mean_list
         rating_list = np.array(test.rating.tolist())
     mean_list = np.array(mean_list)
     mad_list = np.subtract(mean_list,rating_list)
@@ -92,9 +85,6 @@ def madlist2(test,train_pivot,k):
     for index, row in test.iterrows():
         user = row['user']
         movie = row['movie']
-        #neighborList = movieDict[usr]
-        #list_neighbor = users_neighbor[user]
-        #print("neighborlist :: ", list_neighbor)
         if movie not in users_similar:
             mean = 0
             mean_list.append(mean)
@@ -102,19 +92,13 @@ def madlist2(test,train_pivot,k):
 
         list_movie = users_similar[movie]
 
-        #print("movieList :: ", list_movie )
-        #list_common = set(list_neighbor).intersection(set(list_movie))
-        #print("commonusers:: ", list_common)
         list_rating = [train_pivot.ix[i, movie] for i in list_movie]
         list_rating = np.array(list_rating)
-        #print("ratingList :: ", list_rating)
         if len(list_rating)==0:
             mean = 0
         else:
             mean = np.mean(list_rating)
-        #print("mean is:", mean)
         mean_list.append(mean)
-        #test['predicted rating'] = mean_list
         rating_list = np.array(test.rating.tolist())
     mean_list = np.array(mean_list)
     mad_list = np.subtract(mean_list,rating_list)
@@ -140,12 +124,9 @@ def find_MAD2(MAD_list2,test,length):
     return MAD2
 
 
-# Beginning of my program
-start = time.clock()
+# Beginning of program
 train_file =['train1.csv','train2.csv','train3.csv','train4.csv','train5.csv']
 test_file =['test1.csv','test2.csv','test3.csv','test4.csv','test5.csv']
-#train_file = ['train1.csv']
-#test_file = ['test1.csv']
 distances = ['euclidean', 'cityblock', 'cosine']
 k =50
 length = 0
@@ -163,9 +144,9 @@ for i in range(len(distances)):
         length += len(test.index)
     MAD1 = find_MAD1(MAD_list1, test, length)
     MAD2 = find_MAD2(MAD_list2, test, length)
+    
     #proper algorithm is the one that is designed based on user i and each movie j they did not see, top k most similar users to i who have seen j, used this to infer i's rating on j
     print("MAD of proper algorithm is",distances[i]," is::",MAD2)
+    
     #Basic algorithm is the simple algorithm which gives each user movie pair a rating that is equal to average score over all users who rated that movie
     print("MAD of basic algorithm is",distances[i]," is::",MAD1)
-
-print time.clock() - start
